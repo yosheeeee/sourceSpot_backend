@@ -13,7 +13,7 @@ import (
 )
 
 // функция создания пользователя
-func createUser(createDto *models.UserCreateDto) (*models.UserDto, error) {
+func CreateUser(createDto *models.UserRegisterDto) (*models.UserDto, error) {
 	var existingUser models.User
 	database.DB.Where(models.User{Name: createDto.Name}).Or(models.User{Mail: createDto.Mail}).Find(&existingUser)
 	if existingUser.ID != 0 {
@@ -28,7 +28,7 @@ func createUser(createDto *models.UserCreateDto) (*models.UserDto, error) {
 		Name:         createDto.Name,
 		Mail:         createDto.Mail,
 		PasswordHash: hash,
-		PaswordSalt:  salt,
+		PasswordSalt: salt,
 	}
 	database.DB.Create(&user)
 	return user.ToDto(), nil

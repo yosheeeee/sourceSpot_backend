@@ -13,24 +13,26 @@ type Config struct {
 		Port     int    `yaml:"port"`
 		User     string `yaml:"user"`
 		Name     string `yaml:"name"`
-		Password string `yaml:"string"`
+		Password string `yaml:"password"`
 	} `yaml:"database"`
+	JWTSecretKey string `yaml:"jwtSecretKey"`
+	Port         int    `yaml:"port"`
 }
 
-func LoadConfig(path string) (*Config, error) {
+var AppConfig Config
+
+func LoadConfig(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("Error while opening config file")
+		return fmt.Errorf("Error while opening config file")
 	}
 
 	defer file.Close()
 
-	var cfg Config
-
 	var decoder = yaml.NewDecoder(file)
-	if err = decoder.Decode(&cfg); err != nil {
-		return nil, fmt.Errorf("Error while decoding config file")
+	if err = decoder.Decode(&AppConfig); err != nil {
+		return fmt.Errorf("Error while decoding config file")
 	}
 
-	return &cfg, nil
+	return nil
 }

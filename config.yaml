@@ -3,3 +3,5 @@ database:
   port: 5432
   user: "postgres"
   name: "sourceSpot"
+port: 5000
+jwtSecretKey: "my-secret-key"
