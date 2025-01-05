@@ -12,6 +12,8 @@ func AddAuthControllers(r *gin.Engine) {
 	var authGroup = r.Group("/auth")
 	authGroup.POST("/login", loginUser)
 	authGroup.POST("/register", registerUser)
+	authGroup.GET("/token-payload", services.AuthMiddleware(), getTokenPayload)
+	authGroup.POST("/refresh", refreshToken)
 }
 
 func loginUser(c *gin.Context) {
@@ -50,4 +52,43 @@ func registerUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, &res)
+}
+
+func getTokenPayload(c *gin.Context) {
+	var userId, userName, userMail any
+	var ok bool
+	userId, ok = c.Get("userID")
+
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user id not found in token"})
+	}
+	userName, ok = c.Get("userName")
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user name not found in token"})
+	}
+	userMail, ok = c.Get("userMail")
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user mail not found in token"})
+	}
+	c.JSON(http.StatusOK, gin.H{"id": userId, "name": userName, "mail": userMail})
+}
+
+func refreshToken(c *gin.Context) {
+	var refreshBody struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := c.ShouldBindJSON(&refreshBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		return
+	}
+
+	var accessToken, refreshToken, err = services.RefreshTokens(refreshBody.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"accessToken":  accessToken,
+		"refreshToken": refreshToken,
+	})
 }
