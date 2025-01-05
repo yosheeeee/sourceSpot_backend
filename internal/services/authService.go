@@ -10,7 +10,7 @@ import (
 )
 
 type LoginResponce struct {
-	User         models.UserDto
+	User         *models.UserDto
 	AccessToken  string
 	RefreshToken string
 }
@@ -31,6 +31,7 @@ func RegisterUser(createDto *models.UserRegisterDto) (*LoginResponce, error) {
 	return &LoginResponce{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		User:         user,
 	}, nil
 }
 
@@ -52,6 +53,7 @@ func LoginUser(loginDto *models.UserLoginDto) (*LoginResponce, error) {
 		return nil, err
 	}
 	return &LoginResponce{
+		User:         user.ToDto(),
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
@@ -64,7 +66,7 @@ func generateTokens(user *models.UserDto) (accessToken string, refreshToken stri
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 		},
 	}
-	accessToken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString(config.AppConfig.JWTSecretKey)
+	accessToken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString(config.GetJWTSecretKey())
 	if err != nil {
 		return "", "", err
 	}
@@ -76,7 +78,7 @@ func generateTokens(user *models.UserDto) (accessToken string, refreshToken stri
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
 		},
 	}
-	refreshToken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString(config.AppConfig.JWTSecretKey)
+	refreshToken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString(config.GetJWTSecretKey())
 	if err != nil {
 		return "", "", err
 	}

@@ -21,6 +21,10 @@ type Config struct {
 
 var AppConfig Config
 
+func GetJWTSecretKey() []byte {
+	return []byte(AppConfig.JWTSecretKey)
+}
+
 func LoadConfig(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -35,4 +39,5 @@ func LoadConfig(path string) error {
 	}
 
 	return nil
+
 }

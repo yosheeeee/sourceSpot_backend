@@ -20,14 +20,14 @@ type UserDto struct {
 }
 
 type UserRegisterDto struct {
-	Name     string
-	Mail     string
-	Password string
+	Name     string `json:"name" binding:"required"`
+	Mail     string `json:"mail" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 type UserLoginDto struct {
 	Mail     string `json:"mail" binding:"required"`
-	Password string `json:"mail" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 func (user *User) ToDto() *UserDto {
