@@ -14,6 +14,10 @@ func AddAuthControllers(r *gin.Engine) {
 	authGroup.POST("/register", registerUser)
 	authGroup.GET("/token-payload", services.AuthMiddleware(), getTokenPayload)
 	authGroup.POST("/refresh", refreshToken)
+
+	// GitHub OAuth
+	authGroup.GET("/github/login", services.GitHubLogin)
+	authGroup.GET("/github/callback", services.GitHubCallback)
 }
 
 func loginUser(c *gin.Context) {

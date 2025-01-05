@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -15,14 +16,33 @@ type Config struct {
 		Name     string `yaml:"name"`
 		Password string `yaml:"password"`
 	} `yaml:"database"`
-	JWTSecretKey string `yaml:"jwtSecretKey"`
-	Port         int    `yaml:"port"`
+	JWTSecretKey      string `yaml:"jwtSecretKey"`
+	Port              int    `yaml:"port"`
+	GitHubOAuthConfig struct {
+		ClientID     string   `yaml:"clientId"`
+		ClientSecret string   `yaml:"clientSecret"`
+		Scopes       []string `yaml:"scopes"`
+		RedirectURL  string   `yaml:"redirectUrl"`
+	} `yaml:"githubOAuthConfig"`
 }
 
 var AppConfig Config
 
 func GetJWTSecretKey() []byte {
 	return []byte(AppConfig.JWTSecretKey)
+}
+
+func GetGitHubConfig() *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     AppConfig.GitHubOAuthConfig.ClientID,
+		ClientSecret: AppConfig.GitHubOAuthConfig.ClientSecret,
+		Scopes:       AppConfig.GitHubOAuthConfig.Scopes,
+		RedirectURL:  AppConfig.GitHubOAuthConfig.RedirectURL,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://github.com/login/oauth/authorize",
+			TokenURL: "https://github.com/login/oauth/access_token",
+		},
+	}
 }
 
 func LoadConfig(path string) error {
@@ -39,5 +59,4 @@ func LoadConfig(path string) error {
 	}
 
 	return nil
-
 }

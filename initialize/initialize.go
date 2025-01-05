@@ -13,6 +13,7 @@ func InitializeApp(cfgPath string) error {
 		return err
 	}
 	var r = gin.Default()
+
 	InitializeControllers(r)
 	r.Run(fmt.Sprintf(":%d", config.AppConfig.Port))
 	return nil
