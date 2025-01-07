@@ -3,6 +3,7 @@ package initialize
 import (
 	"fmt"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/yosheeeee/sourceSpot_baackend/config"
 	"github.com/yosheeeee/sourceSpot_baackend/database"
@@ -13,6 +14,7 @@ func InitializeApp(cfgPath string) error {
 		return err
 	}
 	var r = gin.Default()
+	r.Use(cors.Default())
 
 	InitializeControllers(r)
 	r.Run(fmt.Sprintf(":%d", config.AppConfig.Port))
