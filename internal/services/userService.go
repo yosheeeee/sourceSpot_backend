@@ -15,9 +15,15 @@ import (
 // функция создания пользователя
 func CreateUser(createDto *models.UserRegisterDto) (*models.UserDto, error) {
 	var existingUser models.User
-	database.DB.Where(models.User{Name: createDto.Name}).Or(models.User{Mail: createDto.Mail}).Find(&existingUser)
+	database.DB.Where(models.User{Mail: createDto.Mail}).Or(models.User{Login: createDto.Login}).Find(&existingUser)
 	if existingUser.ID != 0 {
-		return nil, fmt.Errorf("User with this name or email is already exists")
+		var error string
+		if existingUser.Mail == createDto.Mail {
+			error = "User with this email is already exists"
+		} else {
+			error = "User with this login is already exists"
+		}
+		return nil, fmt.Errorf(error)
 	}
 	var hash, salt string
 	var err error
@@ -25,10 +31,14 @@ func CreateUser(createDto *models.UserRegisterDto) (*models.UserDto, error) {
 		return nil, err
 	}
 	var user = models.User{
-		Name:         createDto.Name,
-		Mail:         createDto.Mail,
-		PasswordHash: hash,
-		PasswordSalt: salt,
+		Name:              createDto.Name,
+		Mail:              createDto.Mail,
+		Login:             createDto.Login,
+		IsGitHubConnected: false,
+		GitHubOAuthToken:  "",
+		GitHubId:          0,
+		PasswordHash:      hash,
+		PasswordSalt:      salt,
 	}
 	database.DB.Create(&user)
 	return user.ToDto(), nil
@@ -80,6 +90,21 @@ func FindUserById(id int64) (*models.User, error) {
 	if err := database.DB.First(&user, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("user with id %d not found", id)
+		}
+		return nil, err // Возвращаем другие ошибки базы данных
+	}
+	return &user, nil
+}
+
+func FindUserByGitHubId(id int64) (*models.User, error) {
+	var user models.User
+	// Ищем пользователя по ID
+	if err := database.DB.Where(models.User{
+		GitHubId:          id,
+		IsGitHubConnected: true,
+	}).Find(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("user with github id %d not found", id)
 		}
 		return nil, err // Возвращаем другие ошибки базы данных
 	}

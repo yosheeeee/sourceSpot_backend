@@ -6,11 +6,23 @@ import (
 
 type User struct {
 	gorm.Model
-	ID           int64
-	Name         string
-	Mail         string
-	PasswordHash string
-	PasswordSalt string
+	ID                int64
+	Login             string
+	Name              string
+	Mail              string
+	PasswordHash      string
+	PasswordSalt      string
+	IsGitHubConnected bool
+	GitHubOAuthToken  string
+	GitHubId          int64
+}
+
+type GitHubUser struct {
+	Login     string `json:"login"`
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	AvatarURL string `json:"avatar_url"`
 }
 
 type UserDto struct {
@@ -20,6 +32,7 @@ type UserDto struct {
 }
 
 type UserRegisterDto struct {
+	Login    string `json:"login" binding:"required"`
 	Name     string `json:"name" binding:"required"`
 	Mail     string `json:"mail" binding:"required"`
 	Password string `json:"password" binding:"required"`
