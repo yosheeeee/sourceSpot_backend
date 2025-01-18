@@ -5,3 +5,11 @@ database:
   name: "sourceSpot"
 port: 5000
 jwtSecretKey: "my-secret-key"
+githubOAuthConfig:
+  clientId: "clientId"
+  clientSecret: "secretKey"
+  scopes:
+    - "user:email"
+  redirectURL: "http://localhost:5000/auth/github/callback"
+  authURL: "https://github.com/login/oauth/authorize"
+  tokenURL: "https://github.com/login/oauth/access_token"
