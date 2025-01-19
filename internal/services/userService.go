@@ -13,24 +13,27 @@ import (
 )
 
 // функция создания пользователя
-func CreateUser(createDto *models.UserRegisterDto) (*models.UserDto, error) {
+func CreateUser(createDto *models.UserRegisterDto) (*models.User, error) {
 	var existingUser models.User
-	database.DB.Where(models.User{Mail: createDto.Mail}).Or(models.User{Login: createDto.Login}).Find(&existingUser)
-	if existingUser.ID != 0 {
-		var error string
+	err := database.DB.Where(models.User{Mail: createDto.Mail}).Or(models.User{Login: createDto.Login}).First(&existingUser).Error
+	if err == nil {
+		var errorMsg string
 		if existingUser.Mail == createDto.Mail {
-			error = "User with this email is already exists"
+			errorMsg = "User with this email already exists"
 		} else {
-			error = "User with this login is already exists"
+			errorMsg = "User with this login already exists"
 		}
-		return nil, fmt.Errorf(error)
+		return nil, fmt.Errorf(errorMsg)
+	} else if err != gorm.ErrRecordNotFound {
+		return nil, err
 	}
+
 	var hash, salt string
-	var err error
 	if hash, salt, err = generatePasswordHash(createDto.Password); err != nil {
 		return nil, err
 	}
-	var user = models.User{
+
+	user := models.User{
 		Name:              createDto.Name,
 		Mail:              createDto.Mail,
 		Login:             createDto.Login,
@@ -39,9 +42,15 @@ func CreateUser(createDto *models.UserRegisterDto) (*models.UserDto, error) {
 		GitHubId:          0,
 		PasswordHash:      hash,
 		PasswordSalt:      salt,
+		IsLocalAvatar:     true,
+		AvatarPath:        "",
 	}
-	database.DB.Create(&user)
-	return user.ToDto(), nil
+
+	if err := database.DB.Create(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 // сравнение паролей
@@ -99,10 +108,10 @@ func FindUserById(id int64) (*models.User, error) {
 func FindUserByGitHubId(id int64) (*models.User, error) {
 	var user models.User
 	// Ищем пользователя по ID
-	if err := database.DB.Where(models.User{
+	if err := database.DB.Where(&models.User{
 		GitHubId:          id,
 		IsGitHubConnected: true,
-	}).Find(&user).Error; err != nil {
+	}).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("user with github id %d not found", id)
 		}

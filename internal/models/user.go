@@ -12,6 +12,8 @@ type User struct {
 	Mail              string
 	PasswordHash      string
 	PasswordSalt      string
+	AvatarPath        string
+	IsLocalAvatar     bool
 	IsGitHubConnected bool
 	GitHubOAuthToken  string
 	GitHubId          int64
@@ -26,9 +28,11 @@ type GitHubUser struct {
 }
 
 type UserDto struct {
-	ID   int64
-	Name string
-	Mail string
+	ID            int64
+	Name          string
+	Mail          string
+	IsAvatarLocal bool
+	AvatarPath    string
 }
 
 type UserRegisterDto struct {
@@ -45,8 +49,10 @@ type UserLoginDto struct {
 
 func (user *User) ToDto() *UserDto {
 	return &UserDto{
-		ID:   user.ID,
-		Name: user.Name,
-		Mail: user.Mail,
+		ID:            user.ID,
+		Name:          user.Name,
+		Mail:          user.Mail,
+		IsAvatarLocal: user.IsLocalAvatar,
+		AvatarPath:    user.AvatarPath,
 	}
 }

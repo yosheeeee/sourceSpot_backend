@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yosheeeee/sourceSpot_baackend/config"
+	"github.com/yosheeeee/sourceSpot_baackend/database"
 	"github.com/yosheeeee/sourceSpot_baackend/internal/models"
 	"golang.org/x/oauth2"
 )
@@ -73,15 +74,34 @@ func GitHubCallback(c *gin.Context) {
 func getGitHubUserData(gitHubUser *models.GitHubUser) (*models.UserDto, error) {
 	var dbUser, err = FindUserByGitHubId(gitHubUser.ID)
 	if err != nil {
-		var existingUser, err = CreateUser(&models.UserRegisterDto{
-			Login: gitHubUser.Login,
-			Name:  gitHubUser.Name,
-			Mail:  gitHubUser.Email,
-		})
+		fmt.Println("user not found")
+		var userWithEmail, err = FindUserByMail(gitHubUser.Email)
 		if err != nil {
-			return nil, err
+			var existingUser, err = CreateUser(&models.UserRegisterDto{
+				Login: gitHubUser.Login,
+				Name:  gitHubUser.Name,
+				Mail:  gitHubUser.Email,
+			})
+			if err != nil {
+				return nil, err
+			}
+			existingUser.PasswordHash = ""
+			existingUser.PasswordHash = ""
+			existingUser.AvatarPath = gitHubUser.AvatarURL
+			existingUser.IsGitHubConnected = true
+			existingUser.IsLocalAvatar = false
+			existingUser.GitHubId = gitHubUser.ID
+			database.DB.Save(&existingUser)
+			return existingUser.ToDto(), nil
+		} else {
+			userWithEmail.AvatarPath = gitHubUser.AvatarURL
+			userWithEmail.IsGitHubConnected = true
+			userWithEmail.IsLocalAvatar = false
+			userWithEmail.GitHubId = gitHubUser.ID
+			database.DB.Save(&userWithEmail)
+			return userWithEmail.ToDto(), nil
 		}
-		return existingUser, nil
 	}
+	fmt.Println("user found")
 	return dbUser.ToDto(), nil
 }

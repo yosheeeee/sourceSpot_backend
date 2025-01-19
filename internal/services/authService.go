@@ -19,14 +19,18 @@ type LoginResponce struct {
 }
 
 func RegisterUser(createDto *models.UserRegisterDto) (*LoginResponce, error) {
-	var user *models.UserDto
+	var user *models.User
 	var err error
 	if user, err = CreateUser(createDto); err != nil {
 		return nil, err
 	}
 
 	var accessToken, refreshToken string
-	accessToken, refreshToken, err = generateTokens(user)
+	accessToken, refreshToken, err = generateTokens(&models.UserDto{
+		ID:   user.ID,
+		Name: user.Name,
+		Mail: user.Mail,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +38,7 @@ func RegisterUser(createDto *models.UserRegisterDto) (*LoginResponce, error) {
 	return &LoginResponce{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		User:         user,
+		User:         user.ToDto(),
 	}, nil
 }
 
