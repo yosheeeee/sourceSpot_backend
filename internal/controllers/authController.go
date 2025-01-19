@@ -12,7 +12,7 @@ func AddAuthControllers(r *gin.Engine) {
 	var authGroup = r.Group("/auth")
 	authGroup.POST("/login", loginUser)
 	authGroup.POST("/register", registerUser)
-	authGroup.GET("/token-payload", services.AuthMiddleware(), getTokenPayload)
+	authGroup.GET("/token-payload", services.AuthMiddleware, getTokenPayload)
 	authGroup.POST("/refresh", refreshToken)
 
 	// GitHub OAuth

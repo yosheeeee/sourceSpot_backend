@@ -68,7 +68,7 @@ func LoginUser(loginDto *models.UserLoginDto) (*LoginResponce, error) {
 
 func generateTokens(user *models.UserDto) (accessToken string, refreshToken string, err error) {
 	accessClaims := &models.TokenClaims{
-		ID:   int(user.ID),
+		ID:   user.ID,
 		Name: user.Name,
 		Mail: user.Mail,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -82,7 +82,7 @@ func generateTokens(user *models.UserDto) (accessToken string, refreshToken stri
 
 	// Refresh Token
 	refreshClaims := &models.TokenClaims{
-		ID:   int(user.ID),
+		ID:   user.ID,
 		Mail: user.Mail,
 		Name: user.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -97,37 +97,35 @@ func generateTokens(user *models.UserDto) (accessToken string, refreshToken stri
 	return accessToken, refreshToken, nil
 }
 
-func AuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Получаем токен из заголовка Authorization
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
-			return
-		}
-
-		// Проверяем формат заголовка (должен начинаться с "Bearer ")
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		if tokenString == authHeader {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header format must be Bearer {token}"})
-			return
-		}
-
-		// Парсим токен
-		claims, err := getTokenPayload(tokenString)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err})
-			return
-		}
-
-		// Добавляем информацию о пользователе в контекст
-		c.Set("userID", claims.ID)
-		c.Set("userMail", claims.Mail)
-		c.Set("userName", claims.Name)
-
-		// Передаем управление следующему обработчику
-		c.Next()
+func AuthMiddleware(c *gin.Context) {
+	// Получаем токен из заголовка Authorization
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+		return
 	}
+
+	// Проверяем формат заголовка (должен начинаться с "Bearer ")
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenString == authHeader {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header format must be Bearer {token}"})
+		return
+	}
+
+	// Парсим токен
+	claims, err := getTokenPayload(tokenString)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err})
+		return
+	}
+
+	// Добавляем информацию о пользователе в контекст
+	c.Set("userID", claims.ID)
+	c.Set("userMail", claims.Mail)
+	c.Set("userName", claims.Name)
+
+	// Передаем управление следующему обработчику
+	c.Next()
 }
 
 func getTokenPayload(token string) (*models.TokenClaims, error) {
