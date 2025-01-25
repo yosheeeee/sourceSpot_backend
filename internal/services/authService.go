@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/yosheeeee/sourceSpot_baackend/config"
+	"github.com/yosheeeee/sourceSpot_baackend/database"
 	"github.com/yosheeeee/sourceSpot_baackend/internal/models"
 )
 
@@ -16,6 +17,39 @@ type LoginResponce struct {
 	User         *models.UserDto
 	AccessToken  string
 	RefreshToken string
+	NeedPassword bool
+}
+
+type AddPasswordDto struct {
+	UserID   int64
+	Password string
+}
+
+func AddPassword(dto *AddPasswordDto) (*LoginResponce, error) {
+	var user, err = FindUserById(dto.UserID)
+	if err != nil {
+		return nil, err
+	}
+	var passwordHash, salt string
+	passwordHash, salt, err = generatePasswordHash(dto.Password)
+	if err != nil {
+		return nil, err
+	}
+	user.PasswordHash = passwordHash
+	user.PasswordSalt = salt
+	database.DB.Save(&user)
+	var accessToken, refreshToken string
+	accessToken, refreshToken, err = generateTokens(user.ToDto())
+	if err != nil {
+		return nil, err
+	}
+
+	return &LoginResponce{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User:         user.ToDto(),
+		NeedPassword: false,
+	}, nil
 }
 
 func RegisterUser(createDto *models.UserRegisterDto) (*LoginResponce, error) {
@@ -39,6 +73,7 @@ func RegisterUser(createDto *models.UserRegisterDto) (*LoginResponce, error) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User:         user.ToDto(),
+		NeedPassword: false,
 	}, nil
 }
 
@@ -63,6 +98,7 @@ func LoginUser(loginDto *models.UserLoginDto) (*LoginResponce, error) {
 		User:         user.ToDto(),
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		NeedPassword: false,
 	}, nil
 }
 

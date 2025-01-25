@@ -107,8 +107,9 @@ func GitHubCallback(c *gin.Context) {
 	}
 
 	user.Email = primaryEmail
+	var needPassword bool
 
-	result, err := getGitHubUserData(&user)
+	result, needPassword, err := getGitHubUserData(&user)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"error": err,
@@ -121,13 +122,14 @@ func GitHubCallback(c *gin.Context) {
 		User:         result,
 		AccessToken:  access_token,
 		RefreshToken: refresh_token,
+		NeedPassword: needPassword,
 	}
 
 	// Возвращаем данные пользователя
 	c.JSON(http.StatusOK, respose)
 }
 
-func getGitHubUserData(gitHubUser *models.GitHubUser) (*models.UserDto, error) {
+func getGitHubUserData(gitHubUser *models.GitHubUser) (*models.UserDto, bool, error) {
 	fmt.Println(gitHubUser.ID, gitHubUser.Name, gitHubUser.Email, gitHubUser.Login)
 	var dbUser, err = FindUserByGitHubId(gitHubUser.ID)
 	if err != nil {
@@ -139,7 +141,7 @@ func getGitHubUserData(gitHubUser *models.GitHubUser) (*models.UserDto, error) {
 				Mail:  gitHubUser.Email,
 			})
 			if err != nil {
-				return nil, err
+				return nil, false, err
 			}
 			existingUser.PasswordHash = ""
 			existingUser.PasswordHash = ""
@@ -149,7 +151,7 @@ func getGitHubUserData(gitHubUser *models.GitHubUser) (*models.UserDto, error) {
 			existingUser.GitHubId = gitHubUser.ID
 			existingUser.Mail = gitHubUser.Email
 			database.DB.Save(&existingUser)
-			return existingUser.ToDto(), nil
+			return existingUser.ToDto(), true, nil
 		} else {
 			userWithEmail.AvatarPath = gitHubUser.AvatarURL
 			userWithEmail.IsGitHubConnected = true
@@ -157,9 +159,9 @@ func getGitHubUserData(gitHubUser *models.GitHubUser) (*models.UserDto, error) {
 			userWithEmail.GitHubId = gitHubUser.ID
 			userWithEmail.Mail = gitHubUser.Email
 			database.DB.Save(&userWithEmail)
-			return userWithEmail.ToDto(), nil
+			return userWithEmail.ToDto(), true, nil
 		}
 	}
 	fmt.Println("user found")
-	return dbUser.ToDto(), nil
+	return dbUser.ToDto(), false, nil
 }

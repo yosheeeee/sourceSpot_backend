@@ -14,9 +14,42 @@ func AddAuthControllers(r *gin.Engine) {
 	authGroup.POST("/register", registerUser)
 	authGroup.GET("/token-payload", services.AuthMiddleware, getTokenPayload)
 	authGroup.POST("/refresh", refreshToken)
+	authGroup.POST("/add-password", services.AuthMiddleware, addPassword)
 
 	// GitHub OAuth
 	authGroup.GET("/github/callback", services.GitHubCallback)
+}
+
+func addPassword(c *gin.Context) {
+	var body struct {
+		Password string `json:"password" bind:"required"`
+	}
+	var err error
+	if err = c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "password required",
+		})
+		return
+	}
+	var res *services.LoginResponce
+	if id, exists := c.Get("userID"); !exists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "User id not found in token payload",
+		})
+		return
+	} else {
+		res, err = services.AddPassword(&services.AddPasswordDto{
+			Password: body.Password,
+			UserID:   id.(int64),
+		})
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.JSON(http.StatusOK, res)
+	}
 }
 
 func loginUser(c *gin.Context) {
