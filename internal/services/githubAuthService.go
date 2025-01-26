@@ -144,7 +144,7 @@ func getGitHubUserData(gitHubUser *models.GitHubUser) (*models.UserDto, bool, er
 				return nil, false, err
 			}
 			existingUser.PasswordHash = ""
-			existingUser.PasswordHash = ""
+			existingUser.PasswordSalt = ""
 			existingUser.AvatarPath = gitHubUser.AvatarURL
 			existingUser.IsGitHubConnected = true
 			existingUser.IsLocalAvatar = false
@@ -159,9 +159,9 @@ func getGitHubUserData(gitHubUser *models.GitHubUser) (*models.UserDto, bool, er
 			userWithEmail.GitHubId = gitHubUser.ID
 			userWithEmail.Mail = gitHubUser.Email
 			database.DB.Save(&userWithEmail)
-			return userWithEmail.ToDto(), true, nil
+			return userWithEmail.ToDto(), false, nil
 		}
 	}
 	fmt.Println("user found")
-	return dbUser.ToDto(), false, nil
+	return dbUser.ToDto(), dbUser.PasswordHash == "", nil
 }
